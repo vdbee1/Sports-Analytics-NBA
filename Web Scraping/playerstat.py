@@ -1,13 +1,15 @@
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import pandas as pd
+import time
 
 years = []
 
-for year in range(1960,2024):
+for year in range(1980,2024):
      years.append(year)
 
 for season in years:
+    time.sleep(2)
     url = "https://www.basketball-reference.com/leagues/NBA_"+str(season)+"_advanced.html#advanced_stats::per"
     html = urlopen(url)
     soup = BeautifulSoup(html, features="html.parser")
