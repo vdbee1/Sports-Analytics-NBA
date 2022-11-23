@@ -25,9 +25,39 @@ subgraph Fantasy Game Simulator
 end
 ```
 
-# Fantasy League Model
+# Web App breakdown
 ```mermaid
 graph TD
+
+accessWebsite --> frontend.mainpage
+server.mainpage --served-->frontend.mainpage
+
+subgraph frontend
+frontend.mainpage--"pick YOUR team(15 players)"-->searchPlayer
+frontend.mainpage--Save the team-->saveTeam
+frontend.mainpage--Play a game -->play
+searchPlayer((Search))
+saveTeam((Save))
+play(("Play"))--simulations using<br>pre-loaded statistical models-->results
+team[/Team/]
+results[The simulation results]
+end
+
+saveTeam -..->database
+team-..->saveTeam
+searchPlayer-.search players.->server.findPlayer
+server.findPlayer -."add player (JSON)".->team
+server.findPlayer -. query .-> database
+database -.return player.-> server.findPlayer
+
+subgraph serverside
+database[(database)]
+  subgraph serverNodeJS
+    server.mainpage
+    server.findPlayer
+  end
+end
+
 
 
 ```
