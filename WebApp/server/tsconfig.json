@@ -94,6 +94,7 @@
   },
   "include": [
     "src",
+    "types"
   ],
   "exclude": [
     "client",
