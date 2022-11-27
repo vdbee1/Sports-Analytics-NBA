@@ -1,0 +1,7 @@
+#FILES TO IGNORE
+
+#macOS files
+.DS_store
+
+#temp files
+/tmp
