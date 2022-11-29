@@ -1,0 +1,9 @@
+#Notebook by-products
+.ipynb_checkpoints
+
+#Rproject files
+.Rproj.user
+
+# remove tmp and testing files
+tmp
+test.csv

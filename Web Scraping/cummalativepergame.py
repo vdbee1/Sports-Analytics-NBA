@@ -17,7 +17,7 @@ batch6 = ["MEM", "NOP", "DAL", "SAS", "HOU"]
 # change your team selection here!
 teams = batch1
 
-path = f"../Cleaned_Datasets/cummalativePerGame"+"batch1"+".csv"
+csvFilePath = f"../Cleaned_Datasets/cummalativePerGame"+"batch1"+".csv"
 for team in teams:
     print(str(team)+" starting...")
     url = "https://www.basketball-reference.com/teams/"+str(team)+"/2023.html"

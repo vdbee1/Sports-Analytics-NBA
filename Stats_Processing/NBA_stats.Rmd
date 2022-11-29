@@ -1,0 +1,60 @@
+---
+title: "NBA-analytics"
+author: "G"
+date: "2022-11-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+reduced_data = read.csv("reduced_data_odd.csv")
+rownames(reduced_data) = reduced_data$X
+reduced_data$X = NULL
+head(reduced_data)
+```
+
+```{r}
+offensive.model1 = lm(PointDifference~(Age+factor(GS)+MP+X3Pcent+X2Pcent+ORB+FTcent+MP+STL+AST),data=reduced_data)
+summary(offensive.model1)
+```
+
+```{r}
+cumulative_data = read.csv("processed_data.csv")
+rownames(cumulative_data) = cumulative_data$X
+cumulative_data$X = NULL
+head(cumulative_data)
+```
+
+```{r}
+dataForGGpairs = data.frame(cumulative_pairs)
+dataForGGpairs$Date = NULL
+dataForGGpairs$Player = NULL
+ggpairs(data=dataForGGpairs,lower = list(continuous = "smooth_loess", combo = "facethist", discrete = "facetbar", na = "na"))
+```
+
+
+```{r}
+offensive.model1 = lm(PointDifference~(Age+factor(GS)+MP+X3Pcent+X2Pcent+ORB+DRB+FTcent+MP+STL+AST+BLK+TOV+PF),data=cumulative_data)
+summary(offensive.model1)
+```
+
+```{r}
+offensive.model1 = lm(PointDifference~(factor(GS)+Age+MP+X3Pcent+X2Pcent+DRB+FTcent+MP+STL+AST+BLK+TOV+PF)^2,data=cumulative_data)
+summary(offensive.model1)
+```
+
+```{r}
+model.interaction.reduced = lm(PointDifference~factor(GS)+(Age+MP+X3Pcent+X2Pcent+DRB+FTcent+MP+STL+AST+BLK+TOV+PF)+(factor(GS)*(Age+MP+X3Pcent+X2Pcent+MP+AST+BLK+TOV+PF)+Age*(X2Pcent+DRB+AST)+X3Pcent*(FTcent+AST+BLK+PF)+DRB*(AST+TOV+PF)+FTcent*(TOV+PF)+STL*AST+AST*PF+TOV*PF),data=cumulative_data)
+summary(model.interaction.reduced)
+```
+Remove STL*AST
+```{r}
+model.interaction.reduced = lm(PointDifference~factor(GS)+(Age+MP+X3Pcent+X2Pcent+DRB+FTcent+MP+STL+AST+BLK+TOV+PF)+(factor(GS)*(Age+MP+X3Pcent+X2Pcent+MP+AST+BLK+TOV+PF)+Age*(X2Pcent+DRB+AST)+X3Pcent*(FTcent+AST+BLK+PF)+DRB*(AST+TOV+PF)+FTcent*(TOV+PF)+AST*PF+TOV*PF),data=cumulative_data)
+summary(model.interaction.reduced)
+```
+
