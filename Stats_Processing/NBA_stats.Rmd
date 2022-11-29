@@ -9,52 +9,332 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r echo=FALSE,results='hide'}
+#initialize packages
+library(GGally)
+library(ggplot2)
+```
 
-
-```{r}
+To check missing cases in dataframe:
+```
+which(! complete.cases("dataframe"))
+```
+#```{r}
 reduced_data = read.csv("reduced_data_odd.csv")
 rownames(reduced_data) = reduced_data$X
 reduced_data$X = NULL
 head(reduced_data)
-```
+#```
 
-```{r}
+#```{r}
 offensive.model1 = lm(PointDifference~(Age+factor(GS)+MP+X3Pcent+X2Pcent+ORB+FTcent+MP+STL+AST),data=reduced_data)
 summary(offensive.model1)
-```
+#```
 
 ```{r}
-cumulative_data = read.csv("processed_data.csv")
+cumulative_data = read.csv("cumulative_processed_data_22.csv")
 rownames(cumulative_data) = cumulative_data$X
+
+full_data = data.frame(cumulative_data)
+
 cumulative_data$X = NULL
+cumulative_data$X3Pcent = NULL
+cumulative_data$FTcent = NULL
+cumulative_data$X2Pcent = NULL
+cumulative_data$FGcent = NULL
 head(cumulative_data)
 ```
 
+## find datas
 ```{r}
-dataForGGpairs = data.frame(cumulative_pairs)
+#1685 3426
+
+full_data[1457,]
+#min(full_data['PointDifference'])
+#max(full_data['PointDifference'])
+
+```
+
+```{r}
+which(! complete.cases(cumulative_data))
+which(full_data['PointDifference']== 10)
+```
+
+
+```
+dataForGGpairs = data.frame(cumulative_data)
 dataForGGpairs$Date = NULL
 dataForGGpairs$Player = NULL
-ggpairs(data=dataForGGpairs,lower = list(continuous = "smooth_loess", combo = "facethist", discrete = "facetbar", na = "na"))
+head(dataForGGpairs)
+#ggpairs(data=dataForGGpairs,lower = list(continuous = "smooth_loess", combo = "facethist", discrete = "facetbar", na = "na"))
 ```
-
+## Base Model
 
 ```{r}
-offensive.model1 = lm(PointDifference~(Age+factor(GS)+MP+X3Pcent+X2Pcent+ORB+DRB+FTcent+MP+STL+AST+BLK+TOV+PF),data=cumulative_data)
+offensive.model1 = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+STL+AST+BLK+TOV+PF),data=cumulative_data)
 summary(offensive.model1)
 ```
-
 ```{r}
-offensive.model1 = lm(PointDifference~(factor(GS)+Age+MP+X3Pcent+X2Pcent+DRB+FTcent+MP+STL+AST+BLK+TOV+PF)^2,data=cumulative_data)
-summary(offensive.model1)
+simpleModel = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+STL+AST+BLK+TOV),data=cumulative_data)
+summary(simpleModel)
+```
+### check for non-linear
+Check for non-linear relationship between X and PointDifference
+```{r}
+#Age+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+MP+STL+AST+BLK+TOV+PF
+ggplot(data=cumulative_data,aes(x=Age,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=MP,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=X3P,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=X3PA,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=X2P,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=X2PA,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=ORB,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=DRB,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=FT,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=FTA,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=STL,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=AST,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=BLK,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=TOV,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=PF,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=,y=PointDifference))+geom_point()
+```
+```{r}
+ggplot(data=full_data,aes(x=FTcent,y=PointDifference))+geom_point()+geom_smooth()
+ggplot(data=full_data,aes(x=FGcent,y=PointDifference))+geom_point()+geom_smooth()
+ggplot(data=full_data,aes(x=X2Pcent,y=PointDifference))+geom_point()+geom_smooth()
+ggplot(data=full_data,aes(x=X3Pcent,y=PointDifference))+geom_point()+geom_smooth()
 ```
 
+
+
 ```{r}
-model.interaction.reduced = lm(PointDifference~factor(GS)+(Age+MP+X3Pcent+X2Pcent+DRB+FTcent+MP+STL+AST+BLK+TOV+PF)+(factor(GS)*(Age+MP+X3Pcent+X2Pcent+MP+AST+BLK+TOV+PF)+Age*(X2Pcent+DRB+AST)+X3Pcent*(FTcent+AST+BLK+PF)+DRB*(AST+TOV+PF)+FTcent*(TOV+PF)+STL*AST+AST*PF+TOV*PF),data=cumulative_data)
+offensive.model1.interact = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+MP+STL+AST+BLK+TOV)^2,data=cumulative_data)
+summary(offensive.model1.interact)
+```
+
+```{r}
+#using p = 0.05
+model.interaction.reduced = lm(PointDifference~(factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+MP+STL+AST+BLK+TOV+ORB*AST+X3PA*BLK+MP*BLK+MP*AST+MP*X2P+MP*X2PA+factor(GS)*DRB+factor(GS)*BLK),data=cumulative_data)
 summary(model.interaction.reduced)
 ```
-Remove STL*AST
 ```{r}
-model.interaction.reduced = lm(PointDifference~factor(GS)+(Age+MP+X3Pcent+X2Pcent+DRB+FTcent+MP+STL+AST+BLK+TOV+PF)+(factor(GS)*(Age+MP+X3Pcent+X2Pcent+MP+AST+BLK+TOV+PF)+Age*(X2Pcent+DRB+AST)+X3Pcent*(FTcent+AST+BLK+PF)+DRB*(AST+TOV+PF)+FTcent*(TOV+PF)+AST*PF+TOV*PF),data=cumulative_data)
-summary(model.interaction.reduced)
+#using p = 0.05
+model.interaction.reduced_further = lm(PointDifference~(factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+MP+STL+AST+TOV+MP*AST+MP*X2P+MP*X2PA+factor(GS)*DRB),data=cumulative_data)
+summary(model.interaction.reduced_further)
 ```
+
+## Prediction
+```{r}
+#simpleModel = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+STL+AST+BLK+TOV),data=cumulative_data)
+player1.a = data.frame(Age=23,GS=1,MP=36.66,X3P=2,X3PA=10,X2P=8,X2PA=13,FT=13,FTA=13,ORB=0,DRB=9,STL=1,AST=6,BLK=0,TOV=4)
+player1.b = data.frame(Age=23,GS=1,MP=29.95,X3P=4,X3PA=9,X2P=8,X2PA=14,FT=4,FTA=5,ORB=2,DRB=5,STL=2,AST=10,BLK=2,TOV=3)
+player2.a = data.frame()
+predict(model.interaction.reduced_further,player1.a,interval = 'predict')
+predict(simpleModel,player1.a,interval ='predict')
+```
+### -40 game
+```{r}
+predict(model.interaction.reduced_further,full_data[831,],interval = 'predict')
+predict(simpleModel,full_data[831,],interval ='predict')
+```
+
+# Positive Point Prediction
+```{r}
+positivePoints = read.csv("positive_points.csv")
+simpleModel.pp = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+STL+AST+BLK+TOV),data=positivePoints)
+summary(simpleModel.pp)
+```
+### reduced simple model
+
+```{r}
+reduced.pp = lm(PointDifference~(MP+X3P+X3PA+X2P+X2PA+DRB+STL+AST+TOV),data=positivePoints)
+summary(reduced.pp)
+```
+### check for non-linear
+Check for non-linear relationship between X and PointDifference
+```{r}
+#Age+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+MP+STL+AST+BLK+TOV+PF
+ggplot(data=positivePoints,aes(x=Age,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=MP,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=X3P,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=X3PA,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=X2P,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=X2PA,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=ORB,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=DRB,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=FT,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=FTA,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=STL,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=AST,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=BLK,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=TOV,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=PF,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+#ggplot(data=positivePoints,aes(x=,y=PointDifference))+geom_point()
+```
+
+### interact
+```{r}
+interaction.pp = lm(PointDifference~(MP+X3P+X3PA+X2P+X2PA+DRB+STL+AST+TOV)^2,data=positivePoints)
+summary(interaction.pp)
+```
+### reduced interact
+```{r}
+reduced.interact.pp = lm(PointDifference~(MP+X3P+X2P+DRB+STL+AST+TOV+DRB*AST+X2P*STL+X3P*TOV+X3P*DRB+MP*AST+MP*DRB),data=positivePoints)
+summary(reduced.interact.pp)
+```
+
+#### refinement
+```{r}
+reduced.interact.pp = lm(PointDifference~(MP+X3P+X2P+DRB+AST+TOV+DRB*AST+X3P*TOV+MP*AST+MP*DRB),data=positivePoints)
+summary(reduced.interact.pp)
+```
+
+
+```{r}
+interaction.pp = lm(PointDifference~(MP+X3P+X3PA+X2P+X2PA+DRB+STL+AST+TOV)^2,data=positivePoints)
+summary(interaction.pp)
+```
+
+
+
+
+# Negative Point Prediction
+```{r}
+negativePoints = read.csv("negative_points.csv")
+simpleModel.np = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+STL+AST+BLK+TOV),data=negativePoints)
+summary(simpleModel.np)
+```
+
+### reduced simple model
+```{r}
+reduced.np = lm(PointDifference~(factor(GS)+MP+X3P+X3PA+X2P+X2PA+DRB+AST+BLK+TOV),data=negativePoints)
+summary(reduced.np)
+```
+### interact
+```{r}
+interact.np = lm(PointDifference~(factor(GS)+MP+X3P+X3PA+X2P+X2PA+DRB+AST+BLK+TOV)^2,data=negativePoints)
+summary(interact.np)
+```
+
+### reduced interact
+```{r}
+reduced.interact.np = lm(PointDifference~GS+MP+X3PA+X2P+X2PA+DRB+AST+BLK+TOV+factor(GS):MP+factor(GS):X2PA+factor(GS):DRB+MP:X2PA+MP:DRB+X3P:AST+X3PA:AST+X3PA:BLK+X2PA:TOV,data=negativePoints)
+summary(reduced.interact.np)
+```
+#### refinement
+```{r}
+reduced.interact.np = lm(PointDifference~GS+MP+X3PA+X2P+X2PA+DRB+AST+BLK+TOV+factor(GS):MP+factor(GS):X2PA+factor(GS):DRB+MP:X2PA+X3P:AST+X3PA:BLK,data=negativePoints)
+summary(reduced.interact.np)
+```
+
+
+
+
+# Testing
+### -40 Game
+```{r}
+predict(reduced.pp,full_data[831,],interval = 'predict')
+predict(reduced.pp,full_data[831,],interval ='predict')
+
+```
+### +10 game
+```{r}
+which(full_data['PointDifference']== 10)
+#36   64   73   90   93  103  152  292  309  312  345  376  377  385  465  495  578 650  744  745  755  767  828  878  897  971 1019 1021 1075 1080 1107 1120 1190 1199
+# 1367 1373 1389 1409 1447 1457 1461 1524 1543 1624 1625 1748 1810 2118 2175 2184 2212
+# 2233 2238 2246 2319 2435 2447 2466 2475 2482 2485 2500 2555 2578 2584 2600 2663 2693
+
+predict(reduced.pp,full_data[1457,],interval='predict')
+```
+### +15 game
+```{r}
+test = predict(reduced.pp,full_data[i,],interval='predict')
+print(data.frame(test)$fit)
+```
+
+
+
+### +40game
+```{r}
+#1685 3426
+which(full_data['PointDifference']== 40)
+predict(reduced.pp,full_data[1685,],interval='predict')
+```
+
+### iterative testing positive
+
+```{r}
+simulatePP = function(x){
+gamesThatMatch = which(full_data['PointDifference']== x)
+simulatedValues = numeric(length(gamesThatMatch))
+for (i in 1:length(gamesThatMatch)){
+  interval = predict(reduced.interact.pp,full_data[gamesThatMatch[i],],interval='predict')
+  simulatedValues[i] = data.frame(interval)$fit
+}
+res= mean(simulatedValues)
+return(res)
+}
+pos.x=(0:44)
+#print(x)
+pos.y = numeric(length(pos.x))
+for (i in 1:length(pos.x)){
+  pos.y[i] = simulatePP(pos.x[i])
+}
+#print(y)
+pos.testFrame = data.frame(x=pos.x,y=pos.y)
+head(pos.testFrame)
+```
+```{r}
+ggplot(data=pos.testFrame,aes(x=x,y=y))+geom_point()
+```
+
+### iterative testing negative
+
+```{r}
+simulateNP = function(x){
+gamesThatMatch = which(full_data['PointDifference']== x)
+simulatedValues = numeric(length(gamesThatMatch))
+for (i in 1:length(gamesThatMatch)){
+  interval = predict(reduced.interact.np,full_data[gamesThatMatch[i],],interval='predict')
+  simulatedValues[i] = data.frame(interval)$fit
+}
+res= mean(simulatedValues)
+return(res)
+}
+neg.x=(-40:0)
+#print(x)
+neg.y = numeric(length(neg.x))
+for (i in 1:length(neg.x)){
+  neg.y[i] = simulateNP(neg.x[i])
+}
+#print(y)
+neg.testFrame = data.frame(x =neg.x,y= neg.y)
+head(neg.testFrame)
+```
+
+#### ALL
+```{r}
+gamesThatMatch = which(full_data['PointDifference']== x)
+simulatedValues = numeric(length(gamesThatMatch))
+xvals = numeric(length(gamesThatMatch))
+for (i in 1:length(gamesThatMatch)){
+  interval = predict(reduced.interact.pp,full_data[gamesThatMatch[i],],interval='predict')
+  simulatedValues[i] = data.frame(interval)$fit
+  xvals[i] = 
+}
+```
+
+
+```{r}
+ggplot(data=neg.testFrame,aes(x=x,y=y))+geom_point()
+```
+
+### combined plot
+```{r}
+combined = rbind(pos.testFrame,neg.testFrame)
+ggplot(data=combined,aes(x=x,y=y))+geom_point()
+```
+
+
 
