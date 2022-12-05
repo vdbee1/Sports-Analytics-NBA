@@ -9,10 +9,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# init
 ```{r echo=FALSE,results='hide'}
 #initialize packages
 library(GGally)
 library(ggplot2)
+library(moments)
 ```
 
 To check missing cases in dataframe:
@@ -44,6 +46,61 @@ cumulative_data$X2Pcent = NULL
 cumulative_data$FGcent = NULL
 head(cumulative_data)
 ```
+# profile data
+
+## distributions
+```{r}
+#Date,Age,Game Result,GS,MP,FG,FGA,FGcent,3P,3PA,3Pcent,FT,FTA,FTcent,ORB,DRB,TRB,AST,STL,BLK,TOV,PF,PTS,GmSc,PointDifference,Player,2P,2PA,2Pcent
+ggplot(data=cumulative_data,aes(x=Age))+geom_histogram()
+ggplot(data=cumulative_data,aes(x=MP))+geom_histogram(binwidth=1)
+ggplot(data=cumulative_data,aes(x=FG))+geom_histogram(binwidth=1)
+ggplot(data=cumulative_data,aes(x=FGA))+geom_histogram(binwidth=1)
+ggplot(data=cumulative_data,aes(x=X3P))+geom_histogram(binwidth=1)
+ggplot(data=cumulative_data,aes(x=X3PA))+geom_histogram(binwidth=1)
+#ggplot(data=cumulative_data,aes(x=))+geom_histogram()
+```
+```{r}
+
+#Date,Age,Game Result,GS,MP,FG,FGA,FGcent,3P,3PA,3Pcent,FT,FTA,FTcent,ORB,DRB,TRB,AST,STL,BLK,TOV,PF,PTS,GmSc,PointDifference,Player,2P,2PA,2Pcent
+ggplot(data=cumulative_data,aes(x=Age))+geom_density()
+ggplot(data=cumulative_data,aes(x=MP))+geom_density()
+ggplot(data=cumulative_data,aes(x=FG))+geom_density()
+ggplot(data=cumulative_data,aes(x=FGA))+geom_density()
+ggplot(data=cumulative_data,aes(x=X3P))+geom_density()
+ggplot(data=cumulative_data,aes(x=X3PA))+geom_density()
+ggplot(data=cumulative_data,aes(x=BLK))+geom_histogram()
+ggplot(data=cumulative_data,aes(x=PointDifference))+geom_density()
+#ggplot(data=cumulative_data,aes(x=))+geom_histogram()
+ggplot(data=cumulative_data,aes(x=PTS))+geom_density()
+```
+```{r}
+mean(cumulative_data$X3PA)
+
+qpois(.95,5.157895)
+```
+
+
+
+## Profiling (skewness/kurtosis)
+```{r}
+
+skewness(cumulative_data$FG)
+kurtosis(cumulative_data$FG)
+```
+
+
+## our calculated league means
+```{r}
+mean(cumulative_data$X2P)
+
+mean(cumulative_data$X2PA)
+```
+
+```{r}
+mean(cumulative_data$X3P)
+mean(cumulative_data$X3PA)
+```
+
 
 ## find datas
 ```{r}
@@ -68,7 +125,7 @@ dataForGGpairs$Player = NULL
 head(dataForGGpairs)
 #ggpairs(data=dataForGGpairs,lower = list(continuous = "smooth_loess", combo = "facethist", discrete = "facetbar", na = "na"))
 ```
-## Base Model
+# Base Model
 
 ```{r}
 offensive.model1 = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+STL+AST+BLK+TOV+PF),data=cumulative_data)
@@ -224,7 +281,7 @@ summary(reduced.interact.np)
 ```
 #### refinement
 ```{r}
-reduced.interact.np = lm(PointDifference~GS+MP+X3PA+X2P+X2PA+DRB+AST+BLK+TOV+factor(GS):MP+factor(GS):X2PA+factor(GS):DRB+MP:X2PA+X3P:AST+X3PA:BLK,data=negativePoints)
+reduced.interact.np = lm(PointDifference~GS+MP+X3PA+X3P+X2P+X2PA+DRB+AST+BLK+TOV+factor(GS):MP+factor(GS):X2PA+factor(GS):DRB+MP:X2PA+X3PA:BLK,data=negativePoints)
 summary(reduced.interact.np)
 ```
 
@@ -315,15 +372,24 @@ head(neg.testFrame)
 
 #### ALL
 ```{r}
-gamesThatMatch = which(full_data['PointDifference']== x)
-simulatedValues = numeric(length(gamesThatMatch))
-xvals = numeric(length(gamesThatMatch))
-for (i in 1:length(gamesThatMatch)){
-  interval = predict(reduced.interact.pp,full_data[gamesThatMatch[i],],interval='predict')
+
+simulatedValues = numeric(nrow(positivePoints))
+xvals = numeric(nrow(positivePoints))
+
+for (i in 1:nrow(positivePoints)){
+  interval = predict(reduced.interact.pp,positivePoints[i,],interval='predict')
   simulatedValues[i] = data.frame(interval)$fit
-  xvals[i] = 
+  xvals[i] = positivePoints[i,]$PointDifference
 }
+print(length(positivePoints))
+print(simulatedValues)
+fullSimulation.pp = data.frame(PointDifference=xvals,simulatedValues)
+head(fullSimulation.pp)
 ```
+```{r}
+ggplot(data=fullSimulation.pp,aes(x=PointDifference,y=simulatedValues))+geom_point(alpha=0.1,color="blue")+geom_smooth()
+```
+
 
 
 ```{r}
@@ -336,5 +402,27 @@ combined = rbind(pos.testFrame,neg.testFrame)
 ggplot(data=combined,aes(x=x,y=y))+geom_point()
 ```
 
+# Point Prediction Model
+
+```{r}
+pointModel = lm(X2P~(Age+factor(GS)+MP+X3P+X3PA+X2PA+ORB+DRB+FT+FTA+STL+AST+BLK+TOV+PF),data=cumulative_data)
+summary(pointModel)
+```
+## Reduced
+```{r}
+pointModel.reduced = lm(X2P~(Age+X3PA+X2PA+ORB+DRB+FTA+AST+BLK+TOV+PF),data=cumulative_data)
+summary(pointModel.reduced)
+```
+## Interactions
+```{r}
+pointModel.interact = lm(X2P~(Age+X3PA+X2PA+ORB+DRB+FTA+AST+BLK+TOV+PF)^2,data=cumulative_data)
+summary(pointModel.interact)
+```
+## reduced interact
+
+```{r}
+pointModel.interact.reduced = lm(X2P~(Age+X3PA+X2PA+ORB+DRB+FTA+AST+BLK+TOV+PF+AST*TOV+AST*BLK+FTA*TOV+FTA*BLK+ORB*TOV+ORB*FTA+X2PA*AST+X2PA*FTA+X2PA*DRB+X3PA*TOV+X3PA*ORB+Age*X2PA),data=cumulative_data)
+summary(pointModel.interact.reduced)
+```
 
 
