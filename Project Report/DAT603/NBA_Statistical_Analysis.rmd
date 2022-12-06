@@ -1,0 +1,624 @@
+---
+title: 'NBA-Statistical-Analysis '
+author: "Prem Patel"
+---
+
+```{r include=FALSE}
+library(leaps)
+library(binom)
+library(car)
+library(collapsibleTree)
+library(dbplyr)
+library(dplyr)
+library(EnvStats)
+library(ggformula)
+library(ggplot2)
+library(gmodels)
+library(htmltools)
+library(ISLR)
+library(knitr)
+library(lawstat)
+library(markdown)
+library(mosaic)
+library(mdsr)
+library(mosaicData)
+library(nycflights13)
+library(olsrr)
+library(plyr)
+library(purrr)
+library(plotly)
+library(resampledata)
+library(rmarkdown)
+library(rpart)
+library(rpart.plot)
+library(rvest)
+library(SDaA)
+library(shiny)
+library(stringi)
+library(tibble)
+library(tidyr)
+library(tidyselect)
+library(tinytex)
+library(yaml)
+library(shiny)
+library(GGally)
+options(scipen = 100)
+
+```
+
+
+## Question 1
+Offence/Defensive Ratio in NBA over the years
+
+In this question we are going to look at offensive/defensive ratios in NBA over the years, build  formulas for both,  and connect it to a winning % for the teams, which directly relates to their success
+
+### Part A
+We are going to first predict Defensive Rating based on other predictors
+```{r}
+nba=read.csv("metadata_join.csv" )
+nba
+```
+## Full Model
+```{r}
+nba1=lm(DRtg~Rel_DRtg+Pace+G+MP+FG+FGA+X3P+X3PA+ORB+DRB+AST+PTS,data=nba)
+summary(nba1)
+```
+
+## Predictors 
+Here are the predictors we are going to move forward with for our Response Variable Y 
+      
+  DRtg- Defensive rating ~ Our Y.
+  Pace- Pace
+  FG-   Fiel Goal Percentage
+  FGA-  Field Goals Attempted
+  X3PA- Three point shots attempted
+  ORB-  Offensive rebounds
+  DRB-  Defensive rebounds
+  Trb-  Total rebounds
+  AST-  Number of assists
+     
+## First Order Model
+```{r}
+nba2=lm(DRtg~Pace+FG+FGA+X3PA+ORB+DRB+AST,data=nba)
+summary(nba2)
+```
+
+## Full Model Result
+With our next step, once again, for testing an interaction term in our regression model, we use the Individual Coefficients Test (t-test) method.
+
+## Interaction Model
+```{r}
+nba3=lm(DRtg~(Pace+FG+FGA+X3PA+ORB+DRB+AST)^2,data=nba)
+summary(nba3)
+```
+
+## Interaction Model Result:
+Only one interaction term Pace:TRB will be added to our nba2 formula.
+
+## Reduced Interaction Model
+```{r}
+nba4=lm(DRtg~Pace+FG+FGA+X3PA+ORB+DRB+TRB+AST+Pace*FG+FG*FGA+X3PA*ORB+ORB*DRB,data=nba)
+summary(nba4)
+```
+```{r}
+nba5=lm(DRtg~Pace+FG+FGA+X3PA+ORB+DRB+TRB+AST+ORB*DRB,data=nba)
+summary(nba5)
+```
+$$
+\begin{aligned}
+ \hat{Defensive Rating} &=82.49960+1.06636*PACE+1.00602*FG-1.12817*FGA+
+ 0.59180*X3PA+3.34951*ORB-0.27441*DRB-0.44821*TRB-0.63374*AST-0.07938*ORB:DRB+ϵ\\
+\end{aligned}
+$$
+## Reduced Interaction Result
+Here is our best Offensive ratio prediction model that explains 99.67% of the formula for NBA teams: DRtg~Pace+FG+FGA+X3PA+ORB+DRB+AST+ORB*DRB
+
+
+## Prediction
+```{r}
+defensedata = data.frame(Pace=99.6933, FG=41.1, FGA=88.6, X3PA=34.2, ORB=10.6, DRB=33.3, TRB=44, AST=25)
+predict(nba5,defensedata,interval="predict")
+```
+```{r}
+ggplot(data=nba, aes(x=Season, y=DRtg, fill=Season)) + geom_bar(stat="identity") + xlab("NBA Seasons") + ylab("Defensive Rating") + ggtitle("NBA Defensive production over the years.")
+```
+### Part B
+Now we are going to perform the same steps for building an Offensive Rating model
+
+## Offensive Full Model
+```{r}
+nbaO1=lm(ORtg~Pace+G+MP+FG+FGA+X3P+X3PA+ORB+DRB+AST+PTS+FG+X3P,data=nba)
+summary(nbaO1)
+```
+
+  Here are the predictors we are going to move forward with:   
+     ORtg- Offensive rating ~ Our Y.
+     Pace- Pace
+     FG-   Fiel Goal Percentage
+     FGA-  Field Goals Attempted
+     X3PA- Three point shots attempted
+     ORB-  Offensive rebounds
+     DRB-  Defensive rebounds
+     Trb-  Total rebounds
+     AST-  Number of assists
+     
+
+## Offensive First Order Model
+```{r}
+nbaO2=lm(ORtg~Pace+FG+FGA+X3PA+ORB+DRB+AST,data=nba)
+summary(nbaO2)
+```
+
+## Offensive Interaction  Model
+```{r}
+nbaO3=lm(ORtg~(Pace+FG+FGA+X3PA+ORB+DRB+AST)^2,data=nba)
+summary(nbaO3)
+```
+
+## Offensive Reduced Interaction Model
+```{r}
+nbaO4=lm(ORtg~Pace+FG+FGA+X3PA+ORB+DRB+AST+Pace*FG+FG*FGA+FG*AST,data=nba)
+summary(nbaO4)
+```
+
+## Offensive Reduced Interaction Model Result
+Here is our best Offensive ratio prediction model that explains 99.69% of the formula for NBA teams.
+     
+$$
+\begin{aligned}
+ \hat{Offensive Rating} &=119.438663+2.073357*PACE+1.374430*FG-2.233373*FGA+0.610792*X3PA+1.395365*ORB-0.606648*DRB-4.691143*AST-0.042626*Pace:FG+0.027061*FG:FGA+0.104209*FG:ASTϵ\\
+\end{aligned}
+$$
+
+With next two plots we would like make a little visual of positive Offensive and Defensive progress for NBA teams over time?
+
+```{r}
+offensedata = data.frame(Pace=99.6933, FG=41.1, FGA=88.6, X3PA=34.2, ORB=10.6, DRB=33.3, TRB=44, AST=25)
+predict(nbaO4,offensedata,interval="predict")
+```
+
+
+```{r}
+ggplot(data=nba, aes(x=Season, y=ORtg, fill=Season)) + geom_bar(stat="identity") + xlab("NBA Seasons") + ylab("Offensive Rating") + ggtitle("NBA Offensive production all seasons.")
+```
+
+```{r}
+teamstats=read.csv('teamstatscleaned.csv')
+teamstats
+```
+```{r}
+teamstats2<- teamstats[!(row.names(teamstats) %in% c('Season')),]
+teamstats2
+```
+```{r}
+cat('Just cleaned teamstats.csv for our further manipulations.')
+```
+
+```{r}
+teamstats2[is.na(teamstats2) | teamstats2=="Inf"] = NA
+teamstats2
+```
+```{r}
+win=lm(W~Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg,data=teamstats2)
+win
+```
+
+
+
+```{r}
+winloss.subset<-regsubsets(W~Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg,data=teamstats2, nv=6 ) 
+```
+
+```{r}
+summary(winloss.subset)
+```
+
+```{r}
+sum= summary(winloss.subset)
+rsquare<-c(sum$rsq)
+cp<-c(sum$cp)
+AdjustedR<-c(sum$adjr2)
+RMSE<-c(sum$rss)
+BIC<-c(sum$bic)
+cbind(rsquare,cp,BIC,RMSE,AdjustedR)
+```
+
+```{r}
+par(mfrow=c(3,2)) # split the plotting panel into a 3 x 2 grid
+plot(sum$cp,type = "o",pch=10, xlab="Number of Variables",ylab= "Cp")
+plot(sum$bic,type = "o",pch=10, xlab="Number of Variables",ylab= "BIC")
+plot(sum$rsq,type = "o",pch=10, xlab="Number of Variables",ylab= "R^2") 
+plot(sum$rss,type = "o",pch=10, xlab="Number of Variables",ylab= "RMSE")
+plot(sum$adjr2,type = "o",pch=10, xlab="Number of Variables",ylab= "Adjusted R^2")
+```
+
+## Interpretation 
+
+From the plots above we can infer a few things :-\n1. The CP value is exponentially high for the 1 variable model that is the model with only Relative Offensive Rating, It is the lowest at the 2 variable mark that is model with Offensive Rating and Defensive Rating.\n2. The RMSE value is peak at e 1 variable model and keeps decreasing till the 7 variable model, while there could be actual improvement in the model with 7 variables but that could be due to 'junk' variables as well. \n3. From the Adjusted R^2 value we can infer that the value peaks with the 4 variable model although therer is not a huge jump of R^2 after the 2 variable model\n\n From the above we should pick the model with 2 variables since it has the lowest CP and BIC value, additionally there is no significant increase in the Adjusted R2 value after that model.
+
+## Part C
+We want to see how a team's Defense and Offense affect their number of wins in a season. In order to achevie that we will build a model with Predict Wins as (Response Variable) and Offensive and Defensive Rating as (Predictors)
+## WinLoss First Order Model
+```{r}
+winloss.model<-lm(W~ORtg+DRtg,data=teamstats2) 
+summary(winloss.model)
+```
+
+## WinLoss Interaction Model
+Now checking our data for interaction terms
+
+```{r}
+winloss.interactmodel<-lm(W~(ORtg+DRtg)^2,data=teamstats2) 
+summary(winloss.interactmodel)
+```
+## WinLoss Interaction Result 
+The interaction between Offensive rating and defennsive rating is highly significant, additionally the R2 value went up from 73.28% to 74.96%, hence we should include the interaction term in our model.
+
+$$
+\begin{aligned}
+
+\hat{Wins}&=
+-309.0317+5.966942ORtg + 0.9995ORtg + -0.034670(ORtg*DRtg)
+
+\end{aligned}
+$$
+
+
+```{r}
+overalldata = data.frame(ORtg=120.7,DRtg=112.6)
+predict(winloss.interactmodel,overalldata,interval="predict")
+```
+
+## WinLoss Prediction Result
+The above prediction data is the data available for the current season for the team Boston Celtics. Currently the celtics are 18-5 making them the best team in the league. Based on the prediction above, we are getting that the fitted value of 52.53, while the lower and upper values as 39.56 and 65.51. Based on the season statistics from last season Phoenix Suns had a record of 64-18, based on this inference, the Celtics have the potential to pass that record by 1 win based on our model.
+
+## Question 2
+Team Analysis : Awards vs Wins
+Do individual accomplishments accumulate towards winning the NBA season?
+
+In order to answer this quesiton our Predictor Variables are Team Statistics which include:
+
+SRS: Simple Rating System; a team rating that takes into account average point differential and strength of schedule. The rating is denominated in points above/below average, where zero is average
+
+Pace :  is an estimate of the number of possessions per 48 minutes by a team.
+Rel.Pace : Relative Pace
+ORtg: Offensive Rating
+Rel.ORtg : Relative Offensive Rating 
+DRtg : Defensive Rating 
+Rel.DRtg : Relative Defensive Rating
+No_of_Awards : Awards won by that Team
+
+Our Response Variable is Number of Wins since we want to see what affect does No. of Awards and other factors of a Team affect their win
+
+```{r}
+win_data = read.csv("win_awards_data.csv", header = TRUE)
+
+win_full_model = lm(W~SRS+Pace+Rel.Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg+No_of_Awards, data = win_data)
+summary(win_full_model)
+```
+
+## Awards Mulit-Colineaarity Test
+```{r}
+imcdiag(win_full_model, method="VIF")
+```
+
+## First Order Model
+We build our first order model including the predictiors that passed the Colinearity Test
+```{r}
+win_reduced_model = lm(W~SRS+Rel.Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg+No_of_Awards, data = win_data)
+summary(win_reduced_model)
+```
+## Award Interaction Model
+Finding Interaction Terms to Better our Model
+```{r}
+win_interaction_full_model = lm(W~(SRS+Rel.Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg+No_of_Awards)^2, data = win_data)
+summary(win_interaction_full_model)
+```
+
+## Award Reduced Interaction Model (FINAL)
+Added the Interaction Terms
+```{r}
+win_interaction_reduced_model = lm(W~SRS+Rel.Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg+No_of_Awards+(SRS*Rel.Pace)+(ORtg*Rel.ORtg)+(ORtg*DRtg)+(ORtg*Rel.DRtg)+(Rel.ORtg*DRtg)+(Rel.ORtg*Rel.DRtg)+(DRtg*Rel.DRtg), data = win_data)
+summary(win_interaction_reduced_model)
+```
+
+## Award Reduced Interaction Model Result:
+We can see that we have improved our accuracy by nearly 4% from our previous first order model with Adj R accuracy bumping from  73% to 77% which is significant and we will keep our interaction terms for our final model. Then we will do our prediction in the next step.
+
+$$
+\begin{aligned}
+
+\hat{Salary}&=\\
+-529+ 0.046731SRS  
++0.052655 Rel.Pace 
++6.995768ORtg    
+ -0.992156Rel.ORtg\\
++ 4.376027 DRtg 
+-10.382026 Rel.DRtg 
++1.737722 No_of_Awards      
++ 0.033244 SRS:Rel.Pace\\
+-0.009474  ORtg:Rel.ORtg  
+-0.056551 ORtg:DRtg
++ 0.162310ORtg:Rel.DRtg\\
++0.031470Rel.ORtg:DRtg   
+-0.147104 Rel.ORtg:Rel.DRtg  \\
+ -0.071354DRtg:Rel.DRtg      
+
+\end{aligned}
+$$
+
+## Prediction
+We will be predicting the Games won by Golden State Warriors in the Season 2021-2022
+```{r}
+overalldata = data.frame(SRS=5.52,Rel.Pace=0.2,ORtg=112.5,Rel.ORtg=0.5,DRtg=106.9,Rel.DRtg=-5.1,No_of_Awards=0)
+predict(win_interaction_reduced_model,overalldata,interval="predict")
+```
+## Award Prediction Result
+The actual games won by Golden State Warriors for Season 2021-2022 is 55 Wins and our model predicted 45 Wins. This tell us that our Model Predicted the Actual Wins with a 19% Margin of Error. In future we can train this model with more data to give us better predictions
+
+## Question 3
+Player Analysis: Statistics vs Win Shares 
+
+Our Predictor Variables are Player Statistics which include:
+Age : Age of the Player
+X3PA : 3-Point Attempts
+X3P  : 3-point Scored
+FGA : Field-Goal Attempts
+FG : Field-Goal Scored
+ORB : Offensive Rebounds
+DRB : Defensive Rebounds
+STL : Steals
+AST : Assists
+BLK : Block
+TOV : Turnovers
+PF : Personal Fouls
+PTS : Points scored
+FT : Free throws scored
+FTA : Free throws Attempts
+
+Our Response Variable is Win Shares, which is a player statistic which attempts to divvy up credit for team success to the individuals on the team. So our goal is to make a model that predicts Win Shares based on a player's game statistics. Predicting Win Shares can help General Mangers of a sports team to understand what role does player's game statistics play on their ability to contribute to the team. This will help the Mangers draft basketball players who will help the team get more win shares. 
+
+
+```{r}
+playerstats=read.table("playerstats_advanced.csv",header = TRUE,  sep ="," )
+str(playerstats)
+
+
+ggplot(data=playerstats,mapping= aes(x=WS,y=X3PA))+geom_point(color='red')+ 
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=playerstats,mapping= aes(x=WS,y=FGA))+geom_point(color='green')+ 
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=playerstats,mapping= aes(x=WS,y=ORB))+geom_point(color='black')+
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=playerstats,mapping= aes(x=WS,y=DRB))+geom_point(color='orange')+
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=playerstats,mapping= aes(x=WS,y=Age))+geom_point(color='orange')+
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=playerstats,mapping= aes(x=WS,y=STL))+geom_point(color='orange')+
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=playerstats,mapping= aes(x=WS,y=BLK))+geom_point(color='orange')+
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=playerstats,mapping= aes(x=WS,y=PF))+geom_point(color='orange')+
+  geom_smooth(method = "lm", se = FALSE)
+
+```
+Above is a graphical representation of our data to see how linear it is compared to the response variable
+
+Answer the following questions
+
+### A
+Using the individual T-test to evaluate the significant predictors from the full model at $\alpha=0.05$ and write the estimated best fit model. 
+
+```{r}
+pstats_fullmodel<-lm(WS~Age+X3PA+X3P+FGA+FG+ORB+DRB+STL+AST+BLK+TOV+PF+PTS+FT+FTA, data=playerstats) # Full Model with all variables
+summary(pstats_fullmodel)
+```
+
+## Player Stat Interaction Model
+```{r}
+interac_pstatsmodel<-lm(WS~ (Age+X3PA+X3P+FGA+FG+ORB+DRB+STL+AST+BLK+TOV+PF+PTS+FT+FTA)^2 , data = playerstats)
+summary(interac_pstatsmodel)
+```
+## Interpretation:
+Finished checking for interaction terms. Now  we will take the significant interaction terms and make our final model
+
+
+## Player Stat Reduced interaction Model
+```{r}
+reduc_interac_pstatmodel <- lm(WS~ (X3PA+X3P+FG+FGA+ORB+DRB+STL+AST+BLK+TOV+PF+PTS+FT+
+
+(X3PA*DRB)+ 
+(X3PA*STL)+
+(X3PA*FGA)+
+(X3PA*FG)+
+(X3PA*AST)+ 
+(X3PA*BLK)+  
+(X3PA*TOV)+
+(X3P*DRB)+ 
+(X3P*PTS)+ 
+(X3P*BLK)+
+(X3P*PTS)+
+(FGA*ORB)+
+(FGA*STL)+
+(FGA*AST)+
+(FGA*TOV)+
+(FGA*FTA)+
+(FG*STL)+
+(FG*FT)+
+(ORB*PTS)+
+(DRB*STL)+ 
+(DRB*AST)+
+(DRB*BLK)+ 
+(DRB*TOV)+  
+(DRB*PF)+ 
+(STL*AST)+ 
+(STL*BLK)+ 
+(STL*PF)+
+(STL*PTS)+ 
+(AST*PTS)+ 
+(BLK*TOV)+ 
+(BLK*FT)+
+(FT*FTA) ) , data = playerstats)
+
+summary(reduc_interac_pstatmodel)
+```
+## Interpretation
+As we can see that our full model our Adj R^2 value was 0.66. And after doing the interaction model, our final model is giving an output of Adj R^2 of 0.71. Which is better that before because our accuracy of predicting the win shares went up by 4%
+
+## Prediction
+Below we are predicting the Win Shares of a Player named 'Will Barton' from his current player stat in 2022
+```{r}
+#Will Barton 2022
+newdata = data.frame(X3P=2.2,X3PA=6.1,FG=5.5,FGA=12.6,ORB=0.6,DRB=4.2,STL=0.8,AST=3.9,BLK= 0.4,TOV=1.8,PF=1.6,PTS=14.7,FT=1.4,FTA=1.8)
+predict(reduc_interac_pstatmodel,newdata,interval="predict")
+```
+## Prediction Result
+The actual predicted win shares for Will Barton in Season 2022-2023 is 3.2 and our model predicted 2.45 Win Shares. This tell us that our Model Predicted the Win Shares with 22% Margin of Error. Further we can impove this model as more data becomes avaliable in the future
+
+### Best fit Model:
+$$
+\begin{aligned}
+
+\hat{WinShares}&=
+\\0.146916X3PA-0.665229X3P -0.906726FG-0.140737FGA+0.256993ORB\\
++0.127581DRB+0.153601STL+0.171354AST+0.199997 BLK-0.261396TOV
++0.082807PF+0.690488PTS-0.210380FT -0.238074FTA\\
+-0.278108  (X3PA*DRB)
++0.173305(X3PA*STL) 
++0.049326 (X3PA*FGA)  \\
+-0.191485(X3PA*FG) 
+-0.037248(X3PA*AST)
++0.465516(X3PA*BLK) 
++0.119385(X3PA*TOV)\\
+ +0.710569(X3P*DRB)
+ +0.027525(X3P*PTS)
+-1.662771(X3P*BLK)\\
+  -0.069407(FGA*ORB) 
+-0.234242(FGA*STL)
+   -0.041602(FGA*AST) 
+-0.084326(FGA*TOV)
+   -0.014324(FGA*FTA)\\
+ +0.312490(FG*STL) 
+  +0.160305(FG*FT) 
+ +0.081529(ORB*PTS)\\
++0.138937  (DRB*STL) 
+  +0.027160(DRB*AST)
+  +0.101621(DRB*BLK)  
+ -0.098729(DRB*TOV)  \\
+ 0.033443(DRB*PF) 
+  0.051573(STL*AST)
+ -0.254538(STL*BLK)  
+ -0.195162  (STL*PF)
+  0.117311(STL*PTS)\\
+  0.053680(AST*PTS)
+-0.166985(BLK*TOV) 
+  0.150976(BLK*FT) 
+ -0.069980(FT*FTA)\\
+
+         
+\end{aligned}
+$$
+
+### Question 2
+Our Response Variable is Player Salary. We want to find out what player game statistic variable affect the player contracts the most. So our goal is to make a model that predicts Player's Contract based on a player's game statistics for year 2022-2023. This model can help give a general overview to a General Manger of what to pay their players based on their game statistics. Also, this will help rule out any unfairnes to a player contracts since the pay will be based soley on thier performance in the game. 
+
+```{r}
+injurstat=read.table("injuries_stats_contracts.csv",header = TRUE,  sep ="," )
+str(injurstat)
+
+
+ggplot(data=injurstat,mapping= aes(x=Salary,y=X3PA))+geom_point(color='red')+ 
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=injurstat,mapping= aes(x=Salary,y=FGA))+geom_point(color='green')+ 
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=injurstat,mapping= aes(x=Salary,y=ORB))+geom_point(color='black')+
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=injurstat,mapping= aes(x=Salary,y=DRB))+geom_point(color='orange')+
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=injurstat,mapping= aes(x=Salary,y=times_injured))+geom_point(color='blue')+
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=injurstat,mapping= aes(x=Salary,y=STL))+geom_point(color='yellow')+
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=injurstat,mapping= aes(x=Salary,y=BLK))+geom_point(color='violet')+
+  geom_smooth(method = "lm", se = FALSE)
+ggplot(data=injurstat,mapping= aes(x=Salary,y=PF))+geom_point(color='pink')+
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+
+## GG Pairs
+GG Pairs shows us the detail of Co-Linearity of our data. This plot shows if residuals are spread equally along the ranges of predictors. We can check the assumption of equal variance (homoscedasticity). We can see in some of the predictors a horizontal line with equally (randomly) spread points.
+```{r}
+
+df2 <- injurstat[,!names(injurstat) %in% c("Season", "OWS", "Pos","DWS", "Age", "X2PA","X2P", "FT", "FTA","STL", "BLK", "Player","FGA", "X3P", "X3PA","TRB","TOV","PF","ORB")]
+
+df2
+
+ggpairs(df2,lower = list(continuous = "smooth_loess", combo =
+  "facethist", discrete = "facetbar", na = "na"))
+```
+
+
+## Multi-Colinearity Test
+```{r}
+library(mctest)
+injstats_fullmodel<-lm(Salary~X3P+X2P+WS+times_injured+FGA+FG+DRB+STL+AST+BLK+PTS+FTA, data=injurstat) # Full Model with all variables
+imcdiag(injstats_fullmodel, method="VIF")
+```
+## Interpretation
+
+After doing the Multi-co-lineraity test we found out that X3P+FGA+FG+X2P+FTA+PTS are co-linear to the response variable Salary. On this basis we will be building our FIRST-ORDER Model
+
+## Full Model
+```{r}
+injstats_fullmodel<-lm(Salary~X3P+times_injured+FGA+FG+X2P+AST+FTA+DRB+PTS, data=injurstat) # Full Model with all variables
+summary(injstats_fullmodel)
+```
+
+## First order (significant values in full model)
+```{r}
+first_order_injstat <- lm(Salary~times_injured+DRB+AST, data=injurstat)
+summary(first_order_injstat)
+```
+
+## STEP WISE METHOD:
+```{r}
+injstatstepmod=ols_step_forward_p(injstats_fullmodel, prem = 0.05, details=FALSE)
+summary(injstatstepmod$model)
+```
+
+## Interaction Model
+```{r}
+interac_injstat <- lm(Salary~(times_injured+DRB+AST+FG)^2, data=injurstat)
+summary(interac_injstat)
+```
+## Interaction Result
+No interaction was found between the variables so we have decided to not add any interaction terms. Leaving our model as it is
+
+## Reduce Interaction Model
+```{r}
+reduc_interac_injstat <- lm(Salary~times_injured+DRB+AST+FG, data=injurstat)
+summary(reduc_interac_injstat)
+```
+## Reduce Interaction Result
+After the testing for interaction terms, no interaction were found. As a result we did not add any interactions to our model. Our final model comprises of thes predictors: times_injured, Defensive Rebound, Assist, Field Goal Made.  As we can see all our variables are now significant in our Model and we can move on to our predictions
+
+
+$$
+\begin{aligned}
+
+\hat{Salary}&=
+-8526118+114660timesInjured   + 1380419DRB +1267534AST + 2669326FG     
+
+\end{aligned}
+$$
+## Prediction
+Below we are predicting the Salary of a Player named 'Trae Young' from his current player stat in 2022. 
+
+```{r}
+# Prediciton for  Trae Young 2022
+newdata = data.frame(times_injured=6, DRB=3.1, AST=9.7 ,FG = 9.4 )
+predict(reduc_interac_injstat,newdata,interval="predict")
+```
+## Prediction Result
+The actual contract signed to Trae Young by Atlanta Hawks for Season 2022-2023 is \$3,709,6500 and our model predicted $3,382,7889. This tell us that our Model Predicted the Actual Salary with a 9% Margin of Error. 
