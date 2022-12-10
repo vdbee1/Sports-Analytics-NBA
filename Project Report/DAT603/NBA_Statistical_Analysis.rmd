@@ -106,8 +106,8 @@ summary(nba5)
 ```
 $$
 \begin{aligned}
- \hat{Defensive Rating} &=82.49960+1.06636*PACE+1.00602*FG-1.12817*FGA+
- 0.59180*X3PA+3.34951*ORB-0.27441*DRB-0.44821*TRB-0.63374*AST-0.07938*ORB:DRB+ϵ\\
+ &\hat{Defensive Rating} =82.49960+1.06636*PACE+1.00602*FG-1.12817*FGA+\\
+ &\mbox{0.59180*X3PA+3.34951*ORB-0.27441*DRB-0.44821*TRB-0.63374*AST-0.07938*ORB:DRB}\\
 \end{aligned}
 $$
 ## Reduced Interaction Result
@@ -165,9 +165,11 @@ summary(nbaO4)
 Here is our best Offensive ratio prediction model that explains 99.69% of the formula for NBA teams.
      
 $$
-\begin{aligned}
- \hat{Offensive Rating} &=119.438663+2.073357*PACE+1.374430*FG-2.233373*FGA+0.610792*X3PA+1.395365*ORB-0.606648*DRB-4.691143*AST-0.042626*Pace:FG+0.027061*FG:FGA+0.104209*FG:ASTϵ\\
-\end{aligned}
+    \begin{aligned}
+    &\hat{Offensive Rating} =119.438663+2.073357*PACE+1.374430*FG-2.233373*FGA+0.610792*X3PA+\\
+     &\mbox{1.395365*ORB-0.606648*DRB-4.691143*AST-0.042626*Pace:FG+0.027061*FG:FGA+0.104209*FG:AST}\ \\
+    
+    \end{aligned}
 $$
 
 With next two plots we would like make a little visual of positive Offensive and Defensive progress for NBA teams over time?
@@ -182,6 +184,8 @@ predict(nbaO4,offensedata,interval="predict")
 ggplot(data=nba, aes(x=Season, y=ORtg, fill=Season)) + geom_bar(stat="identity") + xlab("NBA Seasons") + ylab("Offensive Rating") + ggtitle("NBA Offensive production all seasons.")
 ```
 
+## Part C
+We want to see how a team's Defense and Offense affect their number of wins in a season. In order to achevie that we will build a model with Predict Wins as (Response Variable) and Offensive and Defensive Rating as (Predictors)
 ```{r}
 teamstats=read.csv('teamstatscleaned.csv')
 teamstats
@@ -198,6 +202,9 @@ cat('Just cleaned teamstats.csv for our further manipulations.')
 teamstats2[is.na(teamstats2) | teamstats2=="Inf"] = NA
 teamstats2
 ```
+Further More,  we are going to Predict Number of Wins of a team in overall season based on Offensive and Defensive Ratings
+
+## Full Model
 ```{r}
 win=lm(W~Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg,data=teamstats2)
 win
@@ -207,6 +214,12 @@ win
 
 ```{r}
 winloss.subset<-regsubsets(W~Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg,data=teamstats2, nv=6 ) 
+```
+## Residual Plot
+```{r}
+ggplot(winloss.model, aes(x=.fitted, y=.resid)) +
+  geom_point() + geom_smooth()+
+  geom_hline(yintercept = 0) 
 ```
 
 ```{r}
@@ -236,8 +249,7 @@ plot(sum$adjr2,type = "o",pch=10, xlab="Number of Variables",ylab= "Adjusted R^2
 
 From the plots above we can infer a few things :-\n1. The CP value is exponentially high for the 1 variable model that is the model with only Relative Offensive Rating, It is the lowest at the 2 variable mark that is model with Offensive Rating and Defensive Rating.\n2. The RMSE value is peak at e 1 variable model and keeps decreasing till the 7 variable model, while there could be actual improvement in the model with 7 variables but that could be due to 'junk' variables as well. \n3. From the Adjusted R^2 value we can infer that the value peaks with the 4 variable model although therer is not a huge jump of R^2 after the 2 variable model\n\n From the above we should pick the model with 2 variables since it has the lowest CP and BIC value, additionally there is no significant increase in the Adjusted R2 value after that model.
 
-## Part C
-We want to see how a team's Defense and Offense affect their number of wins in a season. In order to achevie that we will build a model with Predict Wins as (Response Variable) and Offensive and Defensive Rating as (Predictors)
+
 ## WinLoss First Order Model
 ```{r}
 winloss.model<-lm(W~ORtg+DRtg,data=teamstats2) 
@@ -265,6 +277,7 @@ $$
 
 
 ```{r}
+# Boston Celtics Season 2022-2023
 overalldata = data.frame(ORtg=120.7,DRtg=112.6)
 predict(winloss.interactmodel,overalldata,interval="predict")
 ```
@@ -293,56 +306,93 @@ Our Response Variable is Number of Wins since we want to see what affect does No
 ```{r}
 win_data = read.csv("win_awards_data.csv", header = TRUE)
 
-win_full_model = lm(W~SRS+Pace+Rel.Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg+No_of_Awards, data = win_data)
+win_full_model = lm(W~(SRS+Pace+Rel.Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg+No_of_Awards), data = win_data)
 summary(win_full_model)
 ```
-
 ## Awards Mulit-Colineaarity Test
 ```{r}
 imcdiag(win_full_model, method="VIF")
 ```
 
-## First Order Model
-We build our first order model including the predictiors that passed the Colinearity Test
 ```{r}
-win_reduced_model = lm(W~SRS+Rel.Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg+No_of_Awards, data = win_data)
-summary(win_reduced_model)
+bptest(win_full_model)
 ```
+### Normality test
+$$
+\begin{aligned}
+H_0:&\mbox{ the sample data are significantly normally distributed}\\
+H_a:&\mbox{ the sample data are not significantly normally distributed } \\
+\end{aligned}
+$$
+```{r}
+shapiro.test(residuals(win_full_model))
+```
+### Interpretation
+The Shapiro-Wilk normality test confirms that the residuals are significantly normally distributed, with a p-value less than 0.05. The Null hypothesis cannot be rejected, and our data is normally distributed.
+
+## Residual Plot
+```{r}
+ggplot(win_full_model, aes(x=.fitted, y=.resid)) +
+  geom_point() + geom_smooth()+
+  geom_hline(yintercept = 0) 
+```
+
+
+```{r,warning=F}
+lev=hatvalues(win_full_model)
+
+p = length(coef(win_full_model))
+n = nrow(win_data)
+
+outlier3p = lev[lev>(3*p/n)]
+
+print("h_I>3p/n, outliers are")
+print(outlier3p)
+
+```
+
+```{r}
+plot(rownames(win_data)[1:1577],lev, main = "Leverage in KBI Dataset", xlab="observation",
+    ylab = "Leverage Value")
+abline(h = 3 *p/n, lty = 1)
+```
+
+### Removing Outliers
+```{r}
+newwin = win_data[-c(1,2,6,9,11,12,13,14,22,27,50,52,55,57,60,63,69,81,87,89,93,100,104,112,113,114,132,134,182,194,195,198,202,247,295,442,733,760,889,890,951,953,955,1019, 1023,1084,1085,1263,1307,1357,1358,1359,1363, 1364,1454,1455,1457,1516,1517,1518,1519,1582,1584),]
+
+```
+
+```{r}
+win_full_model_new = lm(W~(SRS+Pace+Rel.Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg+No_of_Awards), data = newwin)
+summary(win_full_model_new)
+```
+Our model improved form have Adjusted R-squared of  0.73 to 0.77 in our new model. And removing those the two rows with outliers in our dataset helped increase the accuracy of the model. F-statistic has also seen an improvement from 547 to 728 In conclusion we will select our new model in order to have best predictions for our response variable.
+
+
 ## Award Interaction Model
 Finding Interaction Terms to Better our Model
 ```{r}
-win_interaction_full_model = lm(W~(SRS+Rel.Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg+No_of_Awards)^2, data = win_data)
+win_interaction_full_model = lm(W~(SRS+Rel.Pace+ORtg+DRtg+No_of_Awards)^2, data = newwin)
 summary(win_interaction_full_model)
 ```
 
 ## Award Reduced Interaction Model (FINAL)
 Added the Interaction Terms
 ```{r}
-win_interaction_reduced_model = lm(W~SRS+Rel.Pace+ORtg+Rel.ORtg+DRtg+Rel.DRtg+No_of_Awards+(SRS*Rel.Pace)+(ORtg*Rel.ORtg)+(ORtg*DRtg)+(ORtg*Rel.DRtg)+(Rel.ORtg*DRtg)+(Rel.ORtg*Rel.DRtg)+(DRtg*Rel.DRtg), data = win_data)
+win_interaction_reduced_model = lm(W~SRS+Rel.Pace+ORtg+DRtg+No_of_Awards+(SRS*Rel.Pace)+(SRS*ORtg)+(Rel.Pace*ORtg)+(Rel.Pace*DRtg)+(ORtg*DRtg), data = newwin)
 summary(win_interaction_reduced_model)
 ```
 
 ## Award Reduced Interaction Model Result:
-We can see that we have improved our accuracy by nearly 4% from our previous first order model with Adj R accuracy bumping from  73% to 77% which is significant and we will keep our interaction terms for our final model. Then we will do our prediction in the next step.
+We can see that we have improved our accuracy by nearly 4% from our previous first order model with Adj R accuracy bumping from  73% to 79% which is significant and we will keep our interaction terms for our final model. Then we will do our prediction in the next step.
 
 $$
 \begin{aligned}
 
-\hat{Salary}&=\\
--529+ 0.046731SRS  
-+0.052655 Rel.Pace 
-+6.995768ORtg    
- -0.992156Rel.ORtg\\
-+ 4.376027 DRtg 
--10.382026 Rel.DRtg 
-+1.737722 No_of_Awards      
-+ 0.033244 SRS:Rel.Pace\\
--0.009474  ORtg:Rel.ORtg  
--0.056551 ORtg:DRtg
-+ 0.162310ORtg:Rel.DRtg\\
-+0.031470Rel.ORtg:DRtg   
--0.147104 Rel.ORtg:Rel.DRtg  \\
- -0.071354DRtg:Rel.DRtg      
+&\hat{Wins}=-265.4+ 3.2SRS -0.85 Rel.Pace +4.75ORtg+1.29 DRtg\\ 
+&\mbox{ +1.39 No_of_Awards+ 3.227SRS:Rel.Pace-0.02ORtg:SRS-0.02 ORtg:DRtg}\\
+&\mbox{+0.0360Rel.Pace:DRtg-0.0350Rel.Pace:0Rtg}\\      
 
 \end{aligned}
 $$
@@ -350,11 +400,11 @@ $$
 ## Prediction
 We will be predicting the Games won by Golden State Warriors in the Season 2021-2022
 ```{r}
-overalldata = data.frame(SRS=5.52,Rel.Pace=0.2,ORtg=112.5,Rel.ORtg=0.5,DRtg=106.9,Rel.DRtg=-5.1,No_of_Awards=0)
+overalldata = data.frame(SRS=5.52,Rel.Pace=0.2,ORtg=112.5,DRtg=106.9,No_of_Awards=0)
 predict(win_interaction_reduced_model,overalldata,interval="predict")
 ```
 ## Award Prediction Result
-The actual games won by Golden State Warriors for Season 2021-2022 is 55 Wins and our model predicted 45 Wins. This tell us that our Model Predicted the Actual Wins with a 19% Margin of Error. In future we can train this model with more data to give us better predictions
+The actual games won by Golden State Warriors for Season 2021-2022 is 55 Wins and our model predicted 52 Wins. This tell us that our Model Predicted the Actual Wins with a 5% Margin of Error. In future we can train this model with more data to give us better predictions
 
 ## Question 3
 Player Analysis: Statistics vs Win Shares 
@@ -414,6 +464,8 @@ pstats_fullmodel<-lm(WS~Age+X3PA+X3P+FGA+FG+ORB+DRB+STL+AST+BLK+TOV+PF+PTS+FT+FT
 summary(pstats_fullmodel)
 ```
 
+
+
 ## Player Stat Interaction Model
 ```{r}
 interac_pstatsmodel<-lm(WS~ (Age+X3PA+X3P+FGA+FG+ORB+DRB+STL+AST+BLK+TOV+PF+PTS+FT+FTA)^2 , data = playerstats)
@@ -434,8 +486,8 @@ reduc_interac_pstatmodel <- lm(WS~ (X3PA+X3P+FG+FGA+ORB+DRB+STL+AST+BLK+TOV+PF+P
 (X3PA*AST)+ 
 (X3PA*BLK)+  
 (X3PA*TOV)+
-(X3P*DRB)+ 
-(X3P*PTS)+ 
+(X3P*DRB)+
+(X3P*PTS)+
 (X3P*BLK)+
 (X3P*PTS)+
 (FGA*ORB)+
@@ -456,14 +508,13 @@ reduc_interac_pstatmodel <- lm(WS~ (X3PA+X3P+FG+FGA+ORB+DRB+STL+AST+BLK+TOV+PF+P
 (STL*PF)+
 (STL*PTS)+ 
 (AST*PTS)+ 
-(BLK*TOV)+ 
 (BLK*FT)+
 (FT*FTA) ) , data = playerstats)
 
 summary(reduc_interac_pstatmodel)
 ```
 ## Interpretation
-As we can see that our full model our Adj R^2 value was 0.66. And after doing the interaction model, our final model is giving an output of Adj R^2 of 0.71. Which is better that before because our accuracy of predicting the win shares went up by 4%
+As we can see that our full model our Adj R^2 value was 0.66. And after doing the interaction model, our final model is giving an output of Adj R^2 of 0.71. Which is better that before because our accuracy of predicting the win shares went up by 5%
 
 ## Prediction
 Below we are predicting the Win Shares of a Player named 'Will Barton' from his current player stat in 2022
@@ -472,6 +523,7 @@ Below we are predicting the Win Shares of a Player named 'Will Barton' from his 
 newdata = data.frame(X3P=2.2,X3PA=6.1,FG=5.5,FGA=12.6,ORB=0.6,DRB=4.2,STL=0.8,AST=3.9,BLK= 0.4,TOV=1.8,PF=1.6,PTS=14.7,FT=1.4,FTA=1.8)
 predict(reduc_interac_pstatmodel,newdata,interval="predict")
 ```
+
 ## Prediction Result
 The actual predicted win shares for Will Barton in Season 2022-2023 is 3.2 and our model predicted 2.45 Win Shares. This tell us that our Model Predicted the Win Shares with 22% Margin of Error. Further we can impove this model as more data becomes avaliable in the future
 
@@ -479,41 +531,14 @@ The actual predicted win shares for Will Barton in Season 2022-2023 is 3.2 and o
 $$
 \begin{aligned}
 
-\hat{WinShares}&=
-\\0.146916X3PA-0.665229X3P -0.906726FG-0.140737FGA+0.256993ORB\\
-+0.127581DRB+0.153601STL+0.171354AST+0.199997 BLK-0.261396TOV
-+0.082807PF+0.690488PTS-0.210380FT -0.238074FTA\\
--0.278108  (X3PA*DRB)
-+0.173305(X3PA*STL) 
-+0.049326 (X3PA*FGA)  \\
--0.191485(X3PA*FG) 
--0.037248(X3PA*AST)
-+0.465516(X3PA*BLK) 
-+0.119385(X3PA*TOV)\\
- +0.710569(X3P*DRB)
- +0.027525(X3P*PTS)
--1.662771(X3P*BLK)\\
-  -0.069407(FGA*ORB) 
--0.234242(FGA*STL)
-   -0.041602(FGA*AST) 
--0.084326(FGA*TOV)
-   -0.014324(FGA*FTA)\\
- +0.312490(FG*STL) 
-  +0.160305(FG*FT) 
- +0.081529(ORB*PTS)\\
-+0.138937  (DRB*STL) 
-  +0.027160(DRB*AST)
-  +0.101621(DRB*BLK)  
- -0.098729(DRB*TOV)  \\
- 0.033443(DRB*PF) 
-  0.051573(STL*AST)
- -0.254538(STL*BLK)  
- -0.195162  (STL*PF)
-  0.117311(STL*PTS)\\
-  0.053680(AST*PTS)
--0.166985(BLK*TOV) 
-  0.150976(BLK*FT) 
- -0.069980(FT*FTA)\\
+&\hat{WinShares}=-0.305648+0.146916X3PA-0.665229X3P -0.906726FG-0.140737FGA+0.256993ORB
+&\mbox{-0.305648+0.146916X3PA-0.665229X3P -0.906726FG-0.140737FGA+0.256993ORB+0.127581DRB+}\\
+&\mbox{0.153601STL+0.171354AST+0.199997 BLK-0.261396TOV+0.082807PF+0.690488PTS-0.210380FT -0.238074FTA} \\
+&\mbox{-0.278108(X3PA*DRB)+0.173305(X3PA*STL) +0.049326 (X3PA*FGA)-0.191485(X3PA*FG) -0.037248(X3PA*AST)+0.465516(X3PA*BLK)}\\ 
+&\mbox{+0.119385(X3PA*TOV)+0.710569(X3P*DRB)+0.027525(X3P*PTS)-1.662771(X3P*BLK)-0.069407(FGA*ORB) -0.234242(FGA*STL)}\\
+&\mbox{-0.041602(FGA*AST) -0.084326(FGA*TOV)-0.014324(FGA*FTA) +0.312490(FG*STL) +0.160305(FG*FT) +0.081529(ORB*PTS)}\\
+&\mbox{+0.138937  (DRB*STL) +0.027160(DRB*AST)+0.101621(DRB*BLK)  -0.098729(DRB*TOV) +0.033443(DRB*PF)  0.051573(STL*AST)-0.254538(STL*BLK)}\\  
+&\mbox{-0.195162  (STL*PF) + 0.117311(STL*PTS)+ 0.053680(AST*PTS) +0.150976(BLK*FT) -0.069980(FT*FTA)}\\
 
          
 \end{aligned}
@@ -562,28 +587,63 @@ ggpairs(df2,lower = list(continuous = "smooth_loess", combo =
 ## Multi-Colinearity Test
 ```{r}
 library(mctest)
-injstats_fullmodel<-lm(Salary~X3P+X2P+WS+times_injured+FGA+FG+DRB+STL+AST+BLK+PTS+FTA, data=injurstat) # Full Model with all variables
+injstats_fullmodel<-lm(Salary~X3P+WS+X3PA+X2PA+times_injured+FGA+FG+X2P+AST+FTA+DRB+PTS, data=injurstat) # Full Model with all variables
+summary(injstats_fullmodel)
 imcdiag(injstats_fullmodel, method="VIF")
 ```
 ## Interpretation
 
 After doing the Multi-co-lineraity test we found out that X3P+FGA+FG+X2P+FTA+PTS are co-linear to the response variable Salary. On this basis we will be building our FIRST-ORDER Model
 
-## Full Model
+### Hetero - Homo chek
+$$
+\begin{aligned}
+ & H0:Heteroscedasticity is not present\\
+ &\mbox{Ha: Heteroscedasticity is present Significance Level=0.05}\\
+\end{aligned}
+$$
+
 ```{r}
-injstats_fullmodel<-lm(Salary~X3P+times_injured+FGA+FG+X2P+AST+FTA+DRB+PTS, data=injurstat) # Full Model with all variables
-summary(injstats_fullmodel)
+bptest(injstats_fullmodel)
 ```
+## Interpretation
+We reject the null hypothesis because our pvalue is 0.00003678<0.05 therefore the equal variance assumption is not met and we can conclude that Heteroscedasticity is present in our graph
+
+## Residual Plot
+```{r}
+ggplot(injstats_fullmodel, aes(x=.fitted, y=.resid)) +
+  geom_point() + geom_smooth()+
+  geom_hline(yintercept = 0) 
+```
+## Interpretation
+This scatter plot shows the distribution of residuals (errors) vs fitted values (predicted values). Looking at the graph we can see that there does  appear to be a problem with linearity assumption and we can say it is not fairly linear. But looking at the variance we can see that our graph represents heteroscedasticity which is a systematic change in the spread of the residuals over the range of measured values. This could be because that not only playerstats and timesinjured variable play a role when deciding a player's salary. Categorical variables like a player's fame among media, awards he won, his ability to connect well with the team, his leadership skills and many other factors could affect our response variable, Salary.
+
+
+
+### Normality test
+$$
+\begin{aligned}
+H_0:&\mbox{ the sample data are significantly normally distributed}\\
+H_a:&\mbox{ the sample data are not significantly normally distributed } \\
+\end{aligned}
+$$
+```{r}
+shapiro.test(residuals(CRD))
+```
+### Interpretation
+The Shapiro-Wilk normality test confirms that the residuals are significantly normally distributed, with a p-value greater than 0.05. The Null hypothesis cannot be rejected, and our data is normally distributed.
+
+
 
 ## First order (significant values in full model)
 ```{r}
-first_order_injstat <- lm(Salary~times_injured+DRB+AST, data=injurstat)
+first_order_injstat <- lm(Salary~WS+times_injured+DRB+AST, data=injurstat)
 summary(first_order_injstat)
 ```
 
 ## STEP WISE METHOD:
 ```{r}
-injstatstepmod=ols_step_forward_p(injstats_fullmodel, prem = 0.05, details=FALSE)
+injstatstepmod=ols_step_both_p(injstats_fullmodel, prem = 0.05, details=FALSE)
 summary(injstatstepmod$model)
 ```
 
@@ -604,6 +664,17 @@ summary(reduc_interac_injstat)
 After the testing for interaction terms, no interaction were found. As a result we did not add any interactions to our model. Our final model comprises of thes predictors: times_injured, Defensive Rebound, Assist, Field Goal Made.  As we can see all our variables are now significant in our Model and we can move on to our predictions
 
 
+```{r}
+# log transformation fail
+# modellog<-lm(Salary~log(times_injured)+DRB+AST+FG, data=injurstat)
+# summary(modellog)
+# 
+# ggplot(modellog, aes(x=.fitted, y=.resid)) +
+#   geom_point() +geom_smooth()+
+#   geom_hline(yintercept = 0) 
+```
+
+## Final Model
 $$
 \begin{aligned}
 
