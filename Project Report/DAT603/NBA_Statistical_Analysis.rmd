@@ -4,6 +4,9 @@ author: "Prem Patel"
 ---
 
 ```{r include=FALSE}
+library(GGally)
+library(ggplot2)
+library(moments)
 library(leaps)
 library(binom)
 library(car)
@@ -693,3 +696,235 @@ predict(reduc_interac_injstat,newdata,interval="predict")
 ```
 ## Prediction Result
 The actual contract signed to Trae Young by Atlanta Hawks for Season 2022-2023 is \$3,709,6500 and our model predicted $3,382,7889. This tell us that our Model Predicted the Actual Salary with a 9% Margin of Error. 
+
+
+## Game Simulator Models for Web APP
+
+When two games are simulated we wanted to predict point difference so we used the below model
+
+```{r}
+cumulative_data = read.csv("cumulative_processed_data_22.csv")
+colnames(cumulative_data)
+rownames(cumulative_data) = cumulative_data$X
+
+full_data = data.frame(cumulative_data)
+
+cumulative_data$X = NULL
+cumulative_data$X3Pcent = NULL
+cumulative_data$FTcent = NULL
+cumulative_data$X2Pcent = NULL
+cumulative_data$FGcent = NULL
+head(cumulative_data)
+```
+
+## Checking Distributions
+```{r}
+#Date,Age,Game Result,GS,MP,FG,FGA,FGcent,3P,3PA,3Pcent,FT,FTA,FTcent,ORB,DRB,TRB,AST,STL,BLK,TOV,PF,PTS,GmSc,PointDifference,Player,2P,2PA,2Pcent
+ggplot(data=cumulative_data,aes(x=Age))+geom_histogram()
+ggplot(data=cumulative_data,aes(x=MP))+geom_histogram(binwidth=1)
+ggplot(data=cumulative_data,aes(x=FG))+geom_histogram(binwidth=1)
+ggplot(data=cumulative_data,aes(x=FGA))+geom_histogram(binwidth=1)
+ggplot(data=cumulative_data,aes(x=X3P))+geom_histogram(binwidth=1)
+ggplot(data=cumulative_data,aes(x=X3PA))+geom_histogram(binwidth=1)
+#ggplot(data=cumulative_data,aes(x=))+geom_histogram()
+```
+
+
+```{r}
+
+#Date,Age,Game Result,GS,MP,FG,FGA,FGcent,3P,3PA,3Pcent,FT,FTA,FTcent,ORB,DRB,TRB,AST,STL,BLK,TOV,PF,PTS,GmSc,PointDifference,Player,2P,2PA,2Pcent
+ggplot(data=cumulative_data,aes(x=Age))+geom_density()
+ggplot(data=cumulative_data,aes(x=MP))+geom_density()
+ggplot(data=cumulative_data,aes(x=FG))+geom_density()
+ggplot(data=cumulative_data,aes(x=FGA))+geom_density()
+ggplot(data=cumulative_data,aes(x=X3P))+geom_density()
+ggplot(data=cumulative_data,aes(x=X3PA))+geom_density()
+ggplot(data=cumulative_data,aes(x=BLK))+geom_histogram()
+ggplot(data=cumulative_data,aes(x=PointDifference))+geom_density()
+#ggplot(data=cumulative_data,aes(x=))+geom_histogram()
+ggplot(data=cumulative_data,aes(x=PTS))+geom_density()
+```
+```{r}
+mean(cumulative_data$X3PA)
+
+qpois(.95,5.157895)
+```
+
+
+
+## Profiling (skewness/kurtosis)
+```{r}
+
+skewness(cumulative_data$FG)
+kurtosis(cumulative_data$FG)
+```
+
+
+## our calculated league means
+```{r}
+mean(cumulative_data$X2P)
+
+mean(cumulative_data$X2PA)
+```
+
+```{r}
+mean(cumulative_data$X3P)
+mean(cumulative_data$X3PA)
+```
+
+
+## find datas
+```{r}
+#1685 3426
+
+full_data[1457,]
+#min(full_data['PointDifference'])
+#max(full_data['PointDifference'])
+
+```
+
+```{r}
+which(! complete.cases(cumulative_data))
+which(full_data['PointDifference']== 10)
+```
+
+# Base Model
+
+```{r}
+offensive.model1 = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+STL+AST+BLK+TOV+PF),data=cumulative_data)
+summary(offensive.model1)
+```
+```{r}
+simpleModel = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+STL+AST+BLK+TOV),data=cumulative_data)
+summary(simpleModel)
+```
+### check for non-linear
+Check for non-linear relationship between X and PointDifference
+```{r}
+#Age+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+MP+STL+AST+BLK+TOV+PF
+ggplot(data=cumulative_data,aes(x=Age,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=MP,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=X3P,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=X3PA,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=X2P,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=X2PA,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=ORB,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=DRB,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=FT,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=FTA,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=STL,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=AST,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=BLK,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=TOV,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=PF,y=PointDifference))+geom_point()
+ggplot(data=cumulative_data,aes(x=,y=PointDifference))+geom_point()
+```
+```{r}
+ggplot(data=full_data,aes(x=FTcent,y=PointDifference))+geom_point()+geom_smooth()
+ggplot(data=full_data,aes(x=FGcent,y=PointDifference))+geom_point()+geom_smooth()
+ggplot(data=full_data,aes(x=X2Pcent,y=PointDifference))+geom_point()+geom_smooth()
+ggplot(data=full_data,aes(x=X3Pcent,y=PointDifference))+geom_point()+geom_smooth()
+```
+
+
+
+```{r}
+offensive.model1.interact = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+MP+STL+AST+BLK+TOV)^2,data=cumulative_data)
+summary(offensive.model1.interact)
+```
+
+```{r}
+#using p = 0.05
+model.interaction.reduced = lm(PointDifference~(factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+MP+STL+AST+BLK+TOV+ORB*AST+X3PA*BLK+MP*BLK+MP*AST+MP*X2P+MP*X2PA+factor(GS)*DRB+factor(GS)*BLK),data=cumulative_data)
+summary(model.interaction.reduced)
+```
+```{r}
+#using p = 0.05
+model.interaction.reduced_further = lm(PointDifference~(factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+MP+STL+AST+TOV+MP*AST+MP*X2P+MP*X2PA+factor(GS)*DRB),data=cumulative_data)
+summary(model.interaction.reduced_further)
+```
+
+## Prediction
+```{r}
+#simpleModel = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+STL+AST+BLK+TOV),data=cumulative_data)
+player1.a = data.frame(Age=23,GS=1,MP=36.66,X3P=2,X3PA=10,X2P=8,X2PA=13,FT=13,FTA=13,ORB=0,DRB=9,STL=1,AST=6,BLK=0,TOV=4)
+player1.b = data.frame(Age=23,GS=1,MP=29.95,X3P=4,X3PA=9,X2P=8,X2PA=14,FT=4,FTA=5,ORB=2,DRB=5,STL=2,AST=10,BLK=2,TOV=3)
+player2.a = data.frame()
+predict(model.interaction.reduced_further,player1.a,interval = 'predict')
+predict(simpleModel,player1.a,interval ='predict')
+```
+### -40 game
+```{r}
+predict(model.interaction.reduced_further,full_data[831,],interval = 'predict')
+predict(simpleModel,full_data[831,],interval ='predict')
+```
+
+# Positive Point Prediction
+```{r}
+positivePoints = read.csv("positive_points.csv")
+simpleModel.pp = lm(PointDifference~(Age+factor(GS)+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+STL+AST+BLK+TOV),data=positivePoints)
+summary(simpleModel.pp)
+```
+### reduced simple model
+
+```{r}
+reduced.pp = lm(PointDifference~(MP+X3P+X3PA+X2P+X2PA+DRB+STL+AST+TOV),data=positivePoints)
+summary(reduced.pp)
+```
+### check for non-linear
+Check for non-linear relationship between X and PointDifference
+```{r}
+#Age+MP+X3P+X3PA+X2P+X2PA+ORB+DRB+FT+FTA+MP+STL+AST+BLK+TOV+PF
+ggplot(data=positivePoints,aes(x=Age,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=MP,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=X3P,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=X3PA,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=X2P,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=X2PA,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=ORB,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=DRB,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=FT,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=FTA,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=STL,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=AST,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=BLK,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=TOV,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+ggplot(data=positivePoints,aes(x=PF,y=PointDifference))+geom_point(alpha=.1)+geom_smooth()
+#ggplot(data=positivePoints,aes(x=,y=PointDifference))+geom_point()
+```
+
+### interact
+```{r}
+interaction.pp = lm(PointDifference~(MP+X3P+X3PA+X2P+X2PA+DRB+STL+AST+TOV)^2,data=positivePoints)
+summary(interaction.pp)
+```
+### reduced interact
+```{r}
+reduced.interact.pp = lm(PointDifference~(MP+X3P+X2P+DRB+STL+AST+TOV+DRB*AST+X2P*STL+X3P*TOV+X3P*DRB+MP*AST+MP*DRB),data=positivePoints)
+summary(reduced.interact.pp)
+```
+
+#### refinement
+```{r}
+reduced.interact.pp = lm(PointDifference~(MP+X3P+X2P+DRB+AST+TOV+DRB*AST+X3P*TOV+MP*AST+MP*DRB),data=positivePoints)
+summary(reduced.interact.pp)
+```
+
+
+```{r}
+interaction.pp = lm(PointDifference~(MP+X3P+X3PA+X2P+X2PA+DRB+STL+AST+TOV)^2,data=positivePoints)
+summary(interaction.pp)
+```
+
+$$
+\begin{aligned}
+
+\hat{X2P}=  0.1034  
+\mbox{-0.0059159Age-0.0318536X3PA +0.4525856X2PA +0.0369033ORB+0.0209633DRB}\\          
+\mbox{+0.0219890FTA-0.0068073AST +0.0807074BLK-0.0328199TOV+0.0426290PF}\\
+\mbox{-0.0269191AST:BLK-0.0125643FTA:TOV+0.0212064ORB:TOV-0.0169061ORB:FTA}\\     
+\mbox{-0.0043944X2PA:AST+0.0036997X2PA:FTA+0.0040251X2PA:DRB-0.0192497X3PA:ORB}\\    
+\mbox{+0.0025766Age:X2PA+0.017092FTA:BLK+0.0070497X3PA:TOV+0.0117393AST:TOV}\\      
+
+\end{aligned}
+$$
