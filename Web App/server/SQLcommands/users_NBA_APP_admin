@@ -1,0 +1,47 @@
+--@block create or replace users table
+CREATE OR REPLACE TABLE NBA_APP.users(
+    name VARCHAR(30),
+    email VARCHAR(50) PRIMARY KEY,
+    password VARCHAR(50),
+    room_id VARCHAR(10),
+    team_id VARCHAR(50)
+  );
+--@block create some default users
+INSERT INTO NBA_APP.users (name, email, password, room_id, team_id)
+VALUES(
+    "Gavin",
+    "g@datanerds",
+    "notsecure",
+    NULL,
+    "Motionless Foxes"
+  );
+--@block update for vardaan
+REPLACE INTO NBA_APP.users (name, email, password, room_id, team_id)
+VALUES(
+    "Vardaan",
+    "v@datanerds",
+    "notsecure",
+    "DEMO",
+    "Gifted Goats-Vardaan"
+  );
+--@block
+INSERT INTO NBA_APP.users (name, email, password, room_id, team_id)
+VALUES(
+    "Mridul",
+    "m@datanerds",
+    "notsecure",
+    "DEMO",
+    "Prickly Whales"
+  );
+INSERT INTO NBA_APP.users (name, email, password, room_id, team_id)
+VALUES(
+    "Prem",
+    "p@datanerds",
+    "notsecure",
+    "DEMO",
+    "Amused Monkeys"
+  );
+--@block testblock
+SELECT *
+from NBA_APP.users
+WHERE name in ("Prem", "vardaan")

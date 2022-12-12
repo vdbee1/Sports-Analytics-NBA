@@ -1,0 +1,30 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+/tmp
+tmp/
+
+#analytics (ignore atm)
+data_analyticis
+
+# production (we are including build in the end... it was too slow to build online)
+#/build
+/out
+
+# misc
+.DS_Store
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+debug.log
+
+#ignore .env REACT_APP variables
+.env

@@ -1,0 +1,43 @@
+{
+  "sqltools.connections": [
+    {
+      "mysqlOptions": {
+        "authProtocol": "default"
+      },
+      "previewLimit": 50,
+      "server": "datasciencedb.ucalgary.ca",
+      "port": 3306,
+      "driver": "MariaDB",
+      "name": "datasciencehub",
+      "database": "gavin_lau",
+      "username": "gavin_lau",
+      "password": "2TVH76FWK"
+    },
+    {
+      "mysqlOptions": {
+        "authProtocol": "default"
+      },
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 3306,
+      "askForPassword": true,
+      "driver": "MariaDB",
+      "name": "NBA_APP_default_connection",
+      "username": "app",
+      "database": "NBA_APP"
+    },
+    {
+      "mysqlOptions": {
+        "authProtocol": "default"
+      },
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 3306,
+      "driver": "MariaDB",
+      "database": "NBA_APP",
+      "username": "root",
+      "name": "NBA_APP_admin",
+      "password": "mypass"
+    }
+  ]
+}

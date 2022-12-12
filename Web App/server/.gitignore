@@ -1,0 +1,27 @@
+#macOS
+
+.DS_Store
+#production
+node_modules
+
+yarn-error.log
+yarn.lock
+package-lock.json
+/config/dev.js
+ecosystem.config.js
+/files
+/tmp
+*.ecosystem.config.js
+
+#build
+/out
+/build
+/dist
+
+#configuration files
+.env
+.env.staging
+.env.prod
+*.env*
+
+tsconfig.tsbuildinfo

@@ -1,0 +1,49 @@
+--@block create ROOMS database
+CREATE OR REPLACE DATABASE NBA_APP_rooms;
+--@block create or replace rooms_index table in the NBA_APP database
+CREATE OR REPLACE TABLE NBA_APP.rooms_index(
+    host_email VARCHAR(50),
+    room_id VARCHAR(10) PRIMARY KEY,
+    max_budget int,
+    mode VARCHAR(50),
+    private BOOLEAN,
+    description TEXT
+  );
+--@block grant permissions on the NBA_APP rooms_index table
+grant select,
+  insert,
+  update,
+  drop on NBA_APP.rooms_index to 'app' @'%';
+--@block create the DEMO room
+INSERT INTO rooms_index (
+    host_email,
+    room_id,
+    max_budget,
+    mode,
+    private,
+    description
+  )
+VALUES (
+    "v@datanerds",
+    "DEMO",
+    140000000,
+    default,
+    1,
+    "A demo room."
+  );
+--@block PERMISSION to APP for 'events'
+grant select,
+  insert,
+  update,
+  drop on NBA_APP.events to 'app' @'%';
+--@block create a new table for DEMO that holds all the events.
+CREATE OR REPLACE TABLE NBA_APP_rooms.events(
+    id VARCHAR(20) PRIMARY KEY,
+    room_id VARCHAR(10),
+    entryType VARCHAR(20),
+    user1 VARCHAR(50),
+    user2 VARCHAR(50),
+    time int,
+    description TEXT,
+    result TEXT
+  );
