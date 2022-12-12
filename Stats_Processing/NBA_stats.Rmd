@@ -18,9 +18,9 @@ library(moments)
 ```
 
 To check missing cases in dataframe:
-```
+
 which(! complete.cases("dataframe"))
-```
+
 #```{r}
 reduced_data = read.csv("reduced_data_odd.csv")
 rownames(reduced_data) = reduced_data$X
@@ -28,10 +28,6 @@ reduced_data$X = NULL
 head(reduced_data)
 #```
 
-#```{r}
-offensive.model1 = lm(PointDifference~(Age+factor(GS)+MP+X3Pcent+X2Pcent+ORB+FTcent+MP+STL+AST),data=reduced_data)
-summary(offensive.model1)
-#```
 
 ```{r}
 cumulative_data = read.csv("cumulative_processed_data_22.csv")
@@ -48,17 +44,57 @@ head(cumulative_data)
 ```
 # profile data
 
+## curry distribution
+```{r}
+players = unique(cumulative_data$Player)
+length(players)
+```
+```{r}
+#curry.data = cumulative_data[cumulative_data$Player == "Stephen Curry",]
+
+for(i in 1:20){
+  cat("\nPlotting data for:", players[i])
+  playerData = cumulative_data[cumulative_data$Player == players[i],]
+  g = ggplot()+geom_histogram(data = playerData,aes(x=X2P))
+  print(g)
+}
+
+```
+
+
 ## distributions
 ```{r}
 #Date,Age,Game Result,GS,MP,FG,FGA,FGcent,3P,3PA,3Pcent,FT,FTA,FTcent,ORB,DRB,TRB,AST,STL,BLK,TOV,PF,PTS,GmSc,PointDifference,Player,2P,2PA,2Pcent
 ggplot(data=cumulative_data,aes(x=Age))+geom_histogram()
 ggplot(data=cumulative_data,aes(x=MP))+geom_histogram(binwidth=1)
-ggplot(data=cumulative_data,aes(x=FG))+geom_histogram(binwidth=1)
-ggplot(data=cumulative_data,aes(x=FGA))+geom_histogram(binwidth=1)
-ggplot(data=cumulative_data,aes(x=X3P))+geom_histogram(binwidth=1)
-ggplot(data=cumulative_data,aes(x=X3PA))+geom_histogram(binwidth=1)
+X2P_P=ggplot(data=cumulative_data,aes(x=X2P))+geom_histogram(binwidth=1)
+print(X2P_P)
+X2PA_P=ggplot(data=cumulative_data,aes(x=X2PA))+geom_histogram(binwidth=1)
+print(X2PA_P)
+X3P_P =ggplot(data=cumulative_data,aes(x=X3P))+geom_histogram(binwidth=1)
+print(X3P_P)
+X3PA_P = ggplot(data=cumulative_data,aes(x=X3PA))+geom_histogram(binwidth=1)
+print(X3PA_P)
 #ggplot(data=cumulative_data,aes(x=))+geom_histogram()
 ```
+
+```{r}
+sd(cumulative_data$X2P)
+
+```
+
+```{r}
+p = ggplot_build(X2PA_P)
+p$data
+```
+
+sp=split(p$data[c("x", "density")],p$data[1])
+new_weight <- 2
+sapply(sp, \(DF){
+  with(DF, approx(x, density, xout = new_weight))
+})
+
+
 ```{r}
 
 #Date,Age,Game Result,GS,MP,FG,FGA,FGcent,3P,3PA,3Pcent,FT,FTA,FTcent,ORB,DRB,TRB,AST,STL,BLK,TOV,PF,PTS,GmSc,PointDifference,Player,2P,2PA,2Pcent
@@ -73,6 +109,8 @@ ggplot(data=cumulative_data,aes(x=PointDifference))+geom_density()
 #ggplot(data=cumulative_data,aes(x=))+geom_histogram()
 ggplot(data=cumulative_data,aes(x=PTS))+geom_density()
 ```
+
+
 ```{r}
 mean(cumulative_data$X3PA)
 
@@ -125,6 +163,14 @@ dataForGGpairs$Player = NULL
 head(dataForGGpairs)
 #ggpairs(data=dataForGGpairs,lower = list(continuous = "smooth_loess", combo = "facethist", discrete = "facetbar", na = "na"))
 ```
+
+# Plot to MP
+
+```{r}
+ggplot(data=cumulative_data,aes(x=MP,y=PTS))+geom_point(alpha=0.1)+geom_smooth(color="red")
+```
+
+
 # Base Model
 
 ```{r}
